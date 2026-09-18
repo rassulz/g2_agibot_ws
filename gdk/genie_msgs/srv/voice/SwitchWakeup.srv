@@ -1,0 +1,7 @@
+#提供唤醒开关配置
+#voice/switch_wakeup
+std_msgs/Header     header
+bool wakeup_enabled # 默认 false
+---
+std_msgs/Header     ret
+uint32 result # 0 success 1. failed

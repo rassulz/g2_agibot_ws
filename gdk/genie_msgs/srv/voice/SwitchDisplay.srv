@@ -1,0 +1,7 @@
+#提供柔性屏显示的开关配置
+#display/switch_req
+std_msgs/Header     header
+bool display_enabled # 默认 true
+---
+std_msgs/Header     ret
+uint32 result # 0 success 1. failed

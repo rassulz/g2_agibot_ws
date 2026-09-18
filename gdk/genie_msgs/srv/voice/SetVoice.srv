@@ -1,0 +1,8 @@
+#提供语音设定服务
+#voice/set_voice
+std_msgs/Header     header
+VoiceSettings voice_settings
+uint32 language_type # 0 - cn; 1 - en
+---
+std_msgs/Header     ret
+uint32 result # 0 success 1. failed

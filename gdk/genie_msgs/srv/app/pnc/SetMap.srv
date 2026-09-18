@@ -1,0 +1,18 @@
+uint64 request_id
+uint32 id
+uint32 version
+
+nav_msgs/OccupancyGrid map
+
+geometry_msgs/Polygon[] walls
+
+geometry_msgs/Polygon[] infeasible_areas
+---
+uint64 request_id
+int32 result
+
+
+
+
+
+

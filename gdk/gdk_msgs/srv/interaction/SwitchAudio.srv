@@ -1,0 +1,7 @@
+#提供语音播报&音频播放开关配置
+#voice/switch_audio
+std_msgs/Header     header
+bool audio_enabled # 默认 true
+---
+std_msgs/Header     ret
+uint32 result # 0 success 1. failed

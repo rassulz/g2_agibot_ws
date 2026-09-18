@@ -1,0 +1,26 @@
+std_msgs/Header header
+
+float64 translational_stiffness
+float64 translational_damping
+float64 rotational_stiffness
+float64 rotational_damping
+float64 nullspace_stiffness
+float64 joint1_nullspace_stiffness
+float64 translational_clip_neg_x
+float64 translational_clip_neg_y
+float64 translational_clip_neg_z
+float64 translational_clip_x
+float64 translational_clip_y
+float64 translational_clip_z
+float64 rotational_clip_neg_x
+float64 rotational_clip_neg_y
+float64 rotational_clip_neg_z
+float64 rotational_clip_x
+float64 rotational_clip_y
+float64 rotational_clip_z
+float64 translational_ki
+float64 rotational_ki
+
+# 作为唯一标识，匹配request和response
+string uuid
+string detail

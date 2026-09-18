@@ -1,0 +1,9 @@
+#提供播放本地动画服务
+#/display/video_display
+std_msgs/Header     header
+VideoDisplay video_display
+string requester     #请求方
+uint32 mode # 0 - 开始； 1 - 结束
+---
+std_msgs/Header     ret
+uint32 result # 0 success 1. busy 2 文件不存在

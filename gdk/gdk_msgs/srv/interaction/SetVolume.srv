@@ -1,0 +1,7 @@
+#提供音量设定服务
+#voice/set_volume
+std_msgs/Header     header
+uint32 volume # default - 500 ， [0, 500]
+---
+std_msgs/Header     ret
+uint32 result # 0 success 1. failed

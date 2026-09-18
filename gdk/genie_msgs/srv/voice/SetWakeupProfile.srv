@@ -1,0 +1,12 @@
+std_msgs/Header   header
+
+# 唤醒词档案标识，由服务端映射为本地资源配置
+# 当前值: "你好精灵" 或 "你好小智"
+string profile_id
+
+---
+
+std_msgs/Header   header
+
+# 当前生效的唤醒词档案 ID
+string current_profile_id

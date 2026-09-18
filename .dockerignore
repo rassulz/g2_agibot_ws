@@ -1,0 +1,11 @@
+# Build artifacts -- these are host-built and must never seed an image layer.
+build/
+install/
+log/
+
+.git/
+.vscode/
+**/__pycache__/
+**/*.pyc
+*.tar.gz
+*.tgz

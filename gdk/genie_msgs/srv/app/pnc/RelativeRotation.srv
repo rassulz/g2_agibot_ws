@@ -1,0 +1,7 @@
+uint64 request_id
+TaskHeader header
+geometry_msgs/QuaternionStamped target
+int32 direction # 1: clockwise, -1: counterclockwise, 0: auto
+---
+uint64 request_id
+TaskServiceResult result

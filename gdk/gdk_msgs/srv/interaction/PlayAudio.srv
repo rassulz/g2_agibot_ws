@@ -1,0 +1,8 @@
+#提供播放本地音频服务
+#/voice/play_audio
+std_msgs/Header     header
+string audio_path # 需要交互板能访问到的地址
+string requester     #请求方
+---
+std_msgs/Header     ret
+uint32 result # 0 success 1. busy 2 文件不存在

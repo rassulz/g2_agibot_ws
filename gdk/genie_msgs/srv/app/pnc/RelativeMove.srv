@@ -1,0 +1,6 @@
+uint64 request_id
+TaskHeader header
+geometry_msgs/PoseStamped target
+---
+uint64 request_id
+TaskServiceResult result

@@ -1,0 +1,6 @@
+# /hal/task/delete_task
+#获取所有任务列表
+std_msgs/Header header
+int32 task_id
+---
+int32 error_code # 0成功， 1:执行失败 2:该任务不存在

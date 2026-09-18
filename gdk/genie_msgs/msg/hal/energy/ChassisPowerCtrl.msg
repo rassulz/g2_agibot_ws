@@ -1,0 +1,23 @@
+# G02 Chassis Power Control
+std_msgs/Header header
+
+uint8 chassis_power_board_power_ctrl_req               # Chassis power board sleep/wake control (0: Request low power mode; 1: Request full power mode)
+uint8 chassis_left_traction_motor_power_ctrl_req      # Left traction motor power control (0: Request to turn off power; 1: Request to turn on power)
+uint8 chassis_right_traction_motor_power_ctrl_req      # Right traction motor power control (0: Request to turn off power; 1: Request to turn on power)
+uint8 chassis_left_steering_motor_power_ctrl_req      # Left steering motor power control (0: Request to turn off power; 1: Request to turn on power)
+uint8 chassis_right_steering_motor_power_ctrl_req     # Right steering motor power control (0: Request to turn off power; 1: Request to turn on power)
+uint8 chassis_lidar1_power_ctrl_req                   # LiDAR #1 power control (0: Request to turn off power; 1: Request to turn on power)
+uint8 chassis_lidar2_power_ctrl_req                   # LiDAR #2 power control (0: Request to turn off power; 1: Request to turn on power)
+uint8 chassis_ultrasonic_radar_power_ctrl_req         # Ultrasonic radar power control (0: Request to turn off power; 1: Request to turn on power)
+uint8 chassis_tof_camera_power_ctrl_req               # TOF camera power control (0: Request to turn off power; 1: Request to turn on power)
+uint8 chassis_ethernet_switch_power_ctrl_req          # Ethernet switch power control (0: Request to turn off power; 1: Request to turn on power)
+uint8 chassis_output_power_ctrl_req                   # External power output control (0: Request to turn off power; 1: Request to turn on power)
+uint8 charging_plug_power_ctrl_req                    # Charging plug power control (0: Request to turn off power; 1: Request to turn on power)
+uint8 battery_power_switch_power_ctrl_req             # Battery main power switch control (0: Request to turn off; 1: Request to turn on)
+uint8 battery1_bms_switch_power_ctrl_req              # Battery #1 BMS switch control (0: Request to turn off BMS; 1: Request to turn on BMS)
+uint8 battery2_bms_switch_power_ctrl_req              # Battery #2 BMS switch control (0: Request to turn off BMS; 1: Request to turn on BMS)
+uint8 battery1_unlock_ctrl_req                        # Battery #1 electronic lock control (0: Request to lock; 1: Request to unlock)
+uint8 battery2_unlock_ctrl_req                        # Battery #2 electronic lock control (0: Request to lock; 1: Request to unlock)
+float32 charger_max_charging_current_ctrl_req         # Charger maximum charging current control request (Unit: A, Precision: 0.1A, Range: -44.0A to 44.0A)
+float32 charger_max_charging_voltage_ctrl_req         # Charger maximum charging voltage control request (Unit: V, Precision: 0.1V, Range: -60.0V to 60.0V)
+uint8 chassis_led_strip_power_ctrl_req                # Chassis led strip power control (0: Request to turn off power; 1: Request to turn on power)

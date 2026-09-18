@@ -1,0 +1,11 @@
+std_msgs/Header header
+
+# 当前阶段 site_id 与站点 name 保持一致
+string site_id
+
+---
+
+std_msgs/Header header
+
+# 切换后的当前站点
+string current_site_id

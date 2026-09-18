@@ -1,0 +1,6 @@
+#设置电机当前位置为零位
+std_msgs/Header     header
+uint32              body_part       # 1.头部 2.腰部
+uint8               id              # G02 头部有三个电机对应1，2，3； 腰部电机有5个对应1，2，3，4，5， （与 urdf位置对应)
+---
+uint8               exec_result     # 0: success, 1: failed 

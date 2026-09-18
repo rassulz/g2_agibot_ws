@@ -1,0 +1,6 @@
+# /hal/task/task_list
+#获取所有任务列表
+std_msgs/Header header
+---
+int32[] task_id
+int32 error_code # 0成功， 1:获取失败

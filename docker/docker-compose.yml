@@ -1,0 +1,69 @@
+# AgiBot G2 workspace containers.
+#
+#   docker compose -f docker/docker-compose.yml build kilted
+#   docker compose -f docker/docker-compose.yml run --rm kilted
+#
+# Swap "kilted" for "humble" to get the Ubuntu 22.04 / ROS 2 Humble image.
+
+x-common: &common
+  # DDS discovery is multicast and peer-to-peer; bridged networking breaks it.
+  network_mode: host
+  # Fast DDS uses POSIX shared memory for same-host transport.
+  ipc: host
+  shm_size: "2gb"
+  # Real-time-ish scheduling for control nodes.
+  ulimits:
+    rtprio: 99
+    memlock: -1
+  cap_add:
+    - SYS_NICE
+  stdin_open: true
+  tty: true
+  working_dir: /ws
+  volumes:
+    # The repository itself.
+    - ..:/ws:rw
+    # X11 passthrough for rviz2 / rqt (harmless when unused).
+    - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    # GDK installed on the host by gdk/scripts/install.sh, if present.
+    - ${HOME}/.cache/agibot:/home/dev/.cache/agibot:rw
+  environment:
+    # Must match the robot: gdk/scripts/ros_env.sh sets domain 4.
+    ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-4}"
+    RMW_IMPLEMENTATION: "${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}"
+    # Point at a Fast DDS profile to talk to the robot; see docker/README.md.
+    DDS_PROFILE_FILE: "${DDS_PROFILE_FILE:-}"
+    DISPLAY: "${DISPLAY:-}"
+    QT_X11_NO_MITSHM: "1"
+    TERM: "${TERM:-xterm-256color}"
+
+services:
+  # Ubuntu 24.04 + ROS 2 Kilted + Python 3.12 -- same as the robot.
+  kilted:
+    <<: *common
+    image: g2-agibot-ws:kilted
+    container_name: g2-kilted
+    hostname: g2-kilted
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ROS_DISTRO: kilted
+        USER_UID: "${USER_UID:-1000}"
+        USER_GID: "${USER_GID:-1000}"
+        INSTALL_VIZ: "${INSTALL_VIZ:-0}"
+
+  # Ubuntu 22.04 + ROS 2 Humble + Python 3.10 -- GDK's supported x86_64 host.
+  humble:
+    <<: *common
+    image: g2-agibot-ws:humble
+    container_name: g2-humble
+    hostname: g2-humble
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ROS_DISTRO: humble
+        USER_UID: "${USER_UID:-1000}"
+        USER_GID: "${USER_GID:-1000}"
+        INSTALL_VIZ: "${INSTALL_VIZ:-0}"

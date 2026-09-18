@@ -1,0 +1,58 @@
+# ---------------------------------------------------------------------------
+# ROS 2 / colcon build artifacts
+# ---------------------------------------------------------------------------
+build/
+install/
+log/
+logs/
+.colcon/
+compile_commands.json
+COLCON_IGNORE
+AMENT_IGNORE
+
+# ---------------------------------------------------------------------------
+# Editor / IDE (machine-specific absolute paths)
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ---------------------------------------------------------------------------
+# Vendor archives fetched from the robot -- large, and reproducible via
+# the GDK's own installer. See docker/README.md.
+# ---------------------------------------------------------------------------
+*.tar.gz
+*.tgz
+*.whl
+server_installer*
+examples.tar.gz
+
+# ---------------------------------------------------------------------------
+# Local DDS profiles: gdk_ros_domain.xml is rewritten in place with the
+# machine's own DEV_IP, so it is per-workstation, not shared.
+# ---------------------------------------------------------------------------
+dds/
+*_ros_domain.xml
+
+# ---------------------------------------------------------------------------
+# Never commit credentials or captured robot data
+# ---------------------------------------------------------------------------
+*.pem
+*.key
+*.crt
+secrets.*
+.env
+*.pcd
+*.mcap
+*.db3

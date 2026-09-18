@@ -1,0 +1,6 @@
+uint64 request_id
+TaskHeader header
+uint32 mode
+---
+uint64 request_id
+TaskServiceResult result
