@@ -27,6 +27,7 @@ setup(
         'console_scripts': [
             'status_display = display_visual.status_display:main',
             'face_video = display_visual.face_video:main',
+            'speak = display_visual.speak:main',
         ],
     },
 )
