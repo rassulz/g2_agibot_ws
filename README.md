@@ -44,6 +44,25 @@ source install/kilted/setup.bash
 ros2 interface list | grep gdk_msgs
 ```
 
+## Workflow
+
+Development happens on the workstation, never on the robot. Code moves by git:
+
+```
+  workstation (x86_64)                    robot (aarch64)
+  docker: kilted                          Ubuntu 24.04 / Kilted
+  write + build + commit   ──push──▶  git  ──pull──▶   colcon build + run
+```
+
+The `kilted` container exists so that what builds on the workstation builds on
+the robot: same Ubuntu, same ROS 2 distro, same Python. The architectures
+differ, so only **source** crosses -- `build/` and `install/` are gitignored and
+must be regenerated on each side.
+
+The `humble` container is a separate tool, used only when the workstation needs
+to talk to the robot directly over DDS. See
+[docker/README.md](docker/README.md#which-image-do-i-want).
+
 ## Communication model
 
 The robot's native transport is **protobuf over Fast DDS** (`aorta` /
@@ -71,3 +90,4 @@ public `support.agibot.com` pages, which document GDK 2.4.2.
 
 Apache 2.0 — see [LICENSE](LICENSE). Vendored `genie_msgs` and `gdk_msgs`
 message definitions are MIT, © AgiBot.
+

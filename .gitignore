@@ -56,3 +56,11 @@ secrets.*
 *.pcd
 *.mcap
 *.db3
+
+# glog output from GDK processes (written to the CWD)
+*.INFO
+*.WARNING
+*.ERROR
+*.log.INFO.*
+*.log.WARNING.*
+*.log.ERROR.*

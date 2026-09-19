@@ -9,47 +9,59 @@ were derived from.
 
 ## Which image do I want?
 
-Two targets are provided from one parameterized `Dockerfile`. They are not
-interchangeable, and the right one depends on what you are building.
+Two targets are provided from one parameterized `Dockerfile`. They serve
+different purposes -- pick by what you are doing, not by preference.
 
-| | `kilted` (default) | `humble` |
+### `kilted` -- writing code that will run on the robot (default)
+
+This is the primary development environment. Code is written and built here,
+pushed to git, then pulled and rebuilt on the robot. The container matches the
+robot's runtime exactly:
+
+| | Container | Robot |
 |---|---|---|
-| Ubuntu | **24.04 Noble** | 22.04 Jammy |
-| ROS 2 | **Kilted** | Humble |
-| Python | **3.12** | 3.10 |
-| Matches the robot's runtime | **yes** | no |
-| Matches GDK's x86_64 build target | no | **yes** |
+| Ubuntu | 24.04 | 24.04 |
+| ROS 2 | Kilted | Kilted |
+| Python | 3.12 | 3.12 |
 
-**Use `kilted`** to build and test ROS 2 interfaces and nodes against the same
-distro the robot runs. This is the default.
+Matching matters because ROS 2 distros are not source-compatible: Kilted's
+`rosidl`, QoS defaults and `rclpy`/`rclcpp` APIs differ from Humble's. Building
+against Kilted here means what compiles on your workstation compiles on the
+robot.
 
-**Use `humble`** when linking the GDK's prebuilt x86_64 artifacts. Verified from
-the contents of `server_installer.tar.gz`, the workstation-side binaries are:
+**Architecture is the one thing that does not match.** The container is x86_64;
+the robot is aarch64. Source is portable, compiled objects are not -- so ship
+source through git and run `colcon build` on the robot. Never copy `build/` or
+`install/` across.
 
-```
-app/gdk/build_dep/cpp/x86_64/lib/libgdk_adapter.so
-app/gdk/build_dep/cpp/x86_64/lib/agibot_gdk.cpython-310-x86_64-linux-gnu.so
-app/lib/python3.10/                       # the only bundled Python runtime
-```
+### `humble` -- connecting to the robot over DDS from the workstation
 
-`cpython-310` is Ubuntu 22.04's system Python, and 22.04's ROS 2 is Humble —
-which is why `gdk/scripts/ros_env.sh` offers only `humble` on `x86_64`.
+Only needed when the workstation itself talks to the robot: inspecting live
+topics, teleoperation, or using the GDK Python API.
 
-**This is a hard constraint, not a preference:** the `kilted` image has Python
-3.12, and a 3.12 interpreter cannot import a `cp310` extension module. If you
-want `import agibot_gdk` to work, use the `humble` image.
+| | Container | Reason |
+|---|---|---|
+| Ubuntu | 22.04 | GDK's x86_64 payload is built for it |
+| ROS 2 | Humble | AgiBot's DDS profile uses the Fast DDS **2.x** XML schema |
+| Python | 3.10 | the shipped binding is `cpython-310` |
 
-The robot's own copy is `agibot_gdk.cpython-312-aarch64-linux-gnu.so` — Python
-3.12 *and* aarch64 — so it will not load on either image. Take the x86_64 build
-from the installer, never from `~/app` on the robot.
+Two hard constraints, both verified:
 
-Both speak the same wire protocol. DDS interoperates across distros; matching
-the distro matters for source and ABI compatibility, not for communication.
+1. `conf/dds/gdk_ros_domain.xml` uses `<discoveryServersList>`/`<RemoteServer>`,
+   which Fast DDS 3.x (Kilted) refuses to parse:
+   `XMLPARSER Error: Node 'discoveryServersList' without content`.
+   The same file loads fine under Humble and discovers the robot's topics.
+2. `import agibot_gdk` needs Python 3.10 -- a 3.12 interpreter cannot load a
+   `cp310` extension module.
 
-Note that the GDK core is not itself a ROS library — it speaks protobuf over
-Fast DDS, and `examples/cpp` links `libgdk_adapter.so` with no `rclcpp` or ament
-involved. The ROS distro matters for the interface packages and `examples/ros`,
-and for the Python ABI the native module was built against.
+### Summary
+
+| Task | Container |
+|---|---|
+| Write nodes and interfaces to deploy on the robot | **`kilted`** |
+| `ros2 topic list` / `echo` against the live robot | **`humble`** |
+| `import agibot_gdk` | **`humble`** |
+| Build message packages | either -- both verified |
 
 ## Quick start
 

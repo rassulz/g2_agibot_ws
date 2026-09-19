@@ -111,7 +111,15 @@ RUN PIP_FLAGS=""; \
     python3 -m pip install --no-cache-dir --ignore-installed ${PIP_FLAGS} \
         protobuf \
         grpcio \
-        grpcio-tools
+        grpcio-tools \
+        "packaging>=24.0"
+
+# grpcio-tools drags in a modern setuptools, whose version handling calls
+# packaging.utils.canonicalize_version(strip_trailing_zero=...). Ubuntu 22.04
+# ships packaging 21.3, which has no such parameter, and ament_cmake_python
+# then fails every interface package with:
+#   TypeError: canonicalize_version() got an unexpected keyword argument
+# Pinning packaging forward keeps the pair consistent on both distros.
 
 # ---------------------------------------------------------------------------
 # Non-root user matching the host UID/GID, so files written into the mounted

@@ -1,0 +1,1 @@
+i will not program directely inside the robot, i will do repo push and pull inside the robot, that's why i am using docker. In order to have the same env
