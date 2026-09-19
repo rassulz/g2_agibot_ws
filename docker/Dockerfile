@@ -92,6 +92,7 @@ RUN if [ "${INSTALL_VIZ}" = "1" ]; then \
 # ---------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-numpy \
+        python3-opencv \
         python3-pybind11 \
         python3-setuptools \
         python3-typing-extensions \
