@@ -27,6 +27,7 @@ setup(
         'console_scripts': [
             'camera_monitor = computer_vision.camera_monitor:main',
             'stereo_viewer = computer_vision.stereo_viewer:main',
+            'multi_viewer = computer_vision.multi_viewer:main',
         ],
     },
 )
