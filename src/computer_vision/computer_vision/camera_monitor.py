@@ -1,4 +1,7 @@
-"""Subscribe to the G2 head camera and report what is arriving.
+"""Subscribe to a G2 head camera and report what is arriving.
+
+Defaults to head_stereo_left, this workspace's primary camera. Switch with
+    -p topic:=/gdk/camera/head_color
 
 The head/hand colour streams are published as CompressedImage (JPEG); only
 the depth stream is a raw Image. Camera topics are best_effort, so the QoS
@@ -10,7 +13,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import CompressedImage
 
-DEFAULT_TOPIC = '/gdk/camera/head_color'
+DEFAULT_TOPIC = '/gdk/camera/head_stereo_left'
 
 SENSOR_QOS = QoSProfile(
     reliability=ReliabilityPolicy.BEST_EFFORT,

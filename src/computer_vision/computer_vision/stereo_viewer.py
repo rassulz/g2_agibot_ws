@@ -8,6 +8,10 @@ The native GDK equivalent is agibot_gdk.Camera() with
 CameraType.kHeadStereoLeft, which only runs on the robot. The ROS topic
 works from a workstation, so it is the one used here.
 
+head_stereo_left is the default. The rectilinear alternative is
+
+    -p topic:=/gdk/camera/head_color      640x400, ~1.8 MB/s, no fisheye
+
 Requires the robot in base-fastdds mode.
 
 QoS: camera topics are best_effort. Subscribing with the default reliable

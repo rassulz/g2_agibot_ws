@@ -18,12 +18,13 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import CompressedImage
 
+# head_stereo_left is the primary camera for this workspace; head_color is
+# the rectilinear alternative. The other three the robot exposes
+# (head_stereo_right, hand_left_color, hand_right_color) are available by
+# passing -p topics:='[...]' but are not shown by default.
 DEFAULT_TOPICS = [
-    '/gdk/camera/head_color',
     '/gdk/camera/head_stereo_left',
-    '/gdk/camera/head_stereo_right',
-    '/gdk/camera/hand_left_color',
-    '/gdk/camera/hand_right_color',
+    '/gdk/camera/head_color',
 ]
 
 SENSOR_QOS = QoSProfile(
@@ -65,7 +66,7 @@ class MultiViewer(Node):
         super().__init__('multi_viewer')
         self.declare_parameter('topics', DEFAULT_TOPICS)
         self.declare_parameter('tile_width', 480)
-        self.declare_parameter('columns', 3)
+        self.declare_parameter('columns', 2)
         self.declare_parameter('rate', 15.0)
 
         try:
