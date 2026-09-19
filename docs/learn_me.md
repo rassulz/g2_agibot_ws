@@ -228,7 +228,58 @@ Pure-Python wheels are tagged `py3-none-any` and work everywhere; that is why
 
 ---
 
-## 6. Hands-on
+## 6. Two ways to talk to the robot, and why one needs a cable
+
+There are two entirely separate channels into the G2, and they fail
+differently. Knowing which one a piece of code uses saves hours.
+
+| | ROS 2 bridge | Native GDK API |
+|---|---|---|
+| What it carries | topics: cameras, `/gdk/joint_state` | `Robot()`, `Interaction()` — control and services |
+| Transport | Fast DDS | aorta (`cosine_bus`) |
+| Discovery | discovery server `10.42.1.101:11811` | **etcd at `10.42.1.101:2379`** |
+| Works over WiFi | ✅ | ❌ |
+
+The native API needs the robot's **internal Ethernet fabric**, `10.42.1.0/24`.
+Look at the bottom of `~/.cache/agibot/app/env.sh`:
+
+```bash
+local_ip=$(ip -o -4 addr list | grep '10.42.1.' | ...)
+if [ -z "$local_ip" ]; then
+    echo "WARN no ip in 10.42.1.* found, can not communicate with robot"
+    return 0
+else
+    export LOCATOR_IP=${local_ip}
+    export AORTA_DISCOVERY_URI=http://10.42.1.101:2379
+fi
+```
+
+No `10.42.1.*` address on your machine → `AORTA_DISCOVERY_URI` is never
+exported → aorta falls back to `127.0.0.1:2379` → nothing is there:
+
+```
+aorta http client connect to 127.0.0.1:2379 fail
+AortaComponent aorta domain init failed: http://127.0.0.1:2379
+[ros2run]: Segmentation fault
+```
+
+That segfault is the signature of running a GDK node off the fabric. It is a
+**network** failure, not a code failure.
+
+**Consequence for this workspace:** anything importing `agibot_gdk` runs on the
+robot — `omni_hand/hand_identify.py`, `hand_grasp.py`, `display_visual/speak.py`,
+`face_video.py`. The `humble` container is for the ROS 2 bridge (cameras) and
+for building. Deploy the GDK nodes by git pull on the robot, as CLAUDE.md says.
+
+They are written to run without colcon, straight from the checkout:
+
+```bash
+python3 src/omni_hand/omni_hand/hand_identify.py
+```
+
+---
+
+## 7. Hands-on
 
 Connect and watch the robot. Requires the robot in `base-fastdds` mode (§1).
 
@@ -299,11 +350,11 @@ if __name__ == '__main__':
 python3 joint_listener.py
 ```
 
-If it prints nothing, work the checklist in §7 — do not start editing the code.
+If it prints nothing, work the checklist in §8 — do not start editing the code.
 
 ---
 
-## 7. Debugging checklist
+## 8. Debugging checklist
 
 When you see no data, go in this order. Each step rules out one layer.
 
@@ -318,6 +369,7 @@ When you see no data, go in this order. Each step rules out one layer.
 | 7 | Types | `ros2 interface show gdk_msgs/msg/JointState` | forgot to source `gdk_msgs` |
 | 8 | QoS | `ros2 topic echo --qos-reliability best_effort ...` | QoS mismatch |
 | 9 | Daemon stale | `ros2 daemon stop` | cached discovery state |
+| 10 | aorta (GDK API only) | `echo $AORTA_DISCOVERY_URI` | unset → not on the `10.42.1.*` fabric (§6) |
 
 Step 9 is worth knowing: the ROS 2 daemon caches the graph. After changing
 environment variables or robot modes, `ros2 topic list` can show stale results
@@ -325,7 +377,7 @@ until you restart it.
 
 ---
 
-## 8. Vocabulary
+## 9. Vocabulary
 
 | Term | Meaning |
 |---|---|
@@ -352,7 +404,7 @@ until you restart it.
 
 ---
 
-## 9. Where to read more
+## 10. Where to read more
 
 - **The robot's own docs:** `http://10.42.1.101:8849/site/` — MkDocs, searchable,
   authoritative for GDK 3.2.3. More accurate than the public

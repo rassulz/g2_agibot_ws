@@ -27,6 +27,8 @@ setup(
         'console_scripts': [
             'hand_state = omni_hand.hand_state:main',
             'command_scaffold = omni_hand.command_scaffold:main',
+            'hand_identify = omni_hand.hand_identify:main',
+            'hand_grasp = omni_hand.hand_grasp:main',
         ],
     },
 )
