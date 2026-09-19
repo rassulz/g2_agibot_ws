@@ -53,7 +53,7 @@ class StatusMonitor(Node):
             name = MODE_NAMES.get(msg.mode, f'UNKNOWN({msg.mode})')
             if self._last_mode is not None:
                 prev = MODE_NAMES.get(self._last_mode, self._last_mode)
-                self.get_logger().warn(f'mode change: {prev} -> {name}')
+                self.get_logger().warning(f'mode change: {prev} -> {name}')
             else:
                 self.get_logger().info(f'mode: {name}')
             self._last_mode = msg.mode
@@ -61,7 +61,7 @@ class StatusMonitor(Node):
     def _report(self):
         msg = self._latest
         if msg is None:
-            self.get_logger().warn(
+            self.get_logger().warning(
                 'no status received -- is the robot in base-fastdds mode?')
             return
 

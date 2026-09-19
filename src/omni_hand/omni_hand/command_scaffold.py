@@ -53,7 +53,7 @@ class CommandScaffold(Node):
                                    f'-> {msg.joint_positions}')
             return
 
-        self.get_logger().warn(f'SENDING: {msg.joint_names} '
+        self.get_logger().warning(f'SENDING: {msg.joint_names} '
                                f'-> {msg.joint_positions}')
         self._pub.publish(msg)
 

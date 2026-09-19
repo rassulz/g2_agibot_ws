@@ -25,6 +25,7 @@ WHERE THE VIDEO MUST BE
 """
 
 import os
+import time
 
 import rclpy
 from rclpy.node import Node
@@ -43,6 +44,7 @@ class FaceVideo(Node):
         self.declare_parameter('turn_display_on', True)
 
         self._interaction = None
+        self._initialised = False
 
     # -- GDK -----------------------------------------------------------
     def _connect(self):
@@ -56,15 +58,41 @@ class FaceVideo(Node):
                 'cpython-310/x86_64 and will not load under Python 3.12.')
             return False
 
+        # The GDK core must be brought up before any interface object is
+        # created. Without this, Interaction() constructs fine but every call
+        # fails with "GDK is not initialized" followed by a request timeout.
+        try:
+            if agibot_gdk.gdk_init() != agibot_gdk.GDKRes.kSuccess:
+                self.get_logger().error(
+                    'gdk_init() failed. Check that the GDK services are '
+                    'running and that ~/app/env.sh has been sourced.')
+                return False
+        except Exception as exc:
+            self.get_logger().error(f'gdk_init() raised: {exc}')
+            return False
+
+        self._initialised = True
+
         try:
             self._interaction = agibot_gdk.Interaction()
         except Exception as exc:
             self.get_logger().error(
-                f'could not create Interaction(): {exc}\n'
-                'Check that aorta is reachable (AORTA_DISCOVERY_URI).')
+                f'could not create Interaction(): {exc}')
             return False
 
+        time.sleep(1.0)   # let the interface finish coming up
+        self.get_logger().info('GDK initialised')
         return True
+
+    def release(self):
+        """Tear the GDK down again. Safe to call if init never succeeded."""
+        if not self._initialised:
+            return
+        try:
+            import agibot_gdk
+            agibot_gdk.gdk_release()
+        except Exception as exc:
+            self.get_logger().warning(f'gdk_release() failed: {exc}')
 
     # -- actions -------------------------------------------------------
     def start(self):
@@ -73,7 +101,7 @@ class FaceVideo(Node):
 
         if os.path.isabs(path) and not os.path.exists(path):
             # Not fatal: the interaction board may see a path we cannot.
-            self.get_logger().warn(
+            self.get_logger().warning(
                 f'{path} is not visible from this process. That is fine if '
                 'the interaction board can reach it, but a "file does not '
                 'exist" failure below means it cannot.')
@@ -83,7 +111,7 @@ class FaceVideo(Node):
                 self._interaction.set_display_switch(True)
                 self.get_logger().info('display switched on')
             except Exception as exc:
-                self.get_logger().warn(f'set_display_switch failed: {exc}')
+                self.get_logger().warning(f'set_display_switch failed: {exc}')
 
         forever = ' (looping forever)' if loop == 0 else f' (x{loop})'
         self.get_logger().info(f'playing {path}{forever}')
@@ -128,6 +156,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        node.release()
         node.destroy_node()
         rclpy.try_shutdown()
 

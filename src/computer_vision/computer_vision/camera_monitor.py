@@ -40,7 +40,7 @@ class CameraMonitor(Node):
 
     def _report(self):
         if self._count == 0:
-            self.get_logger().warn(
+            self.get_logger().warning(
                 'no frames -- check the robot is in base-fastdds mode '
                 'and that QoS is best_effort')
             return

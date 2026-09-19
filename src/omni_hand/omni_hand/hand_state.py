@@ -37,7 +37,7 @@ class HandState(Node):
     def _report(self):
         msg = self._latest
         if msg is None:
-            self.get_logger().warn('no joint state received yet')
+            self.get_logger().warning('no joint state received yet')
             return
 
         rows = [
@@ -47,7 +47,7 @@ class HandState(Node):
             if self._match in n
         ]
         if not rows:
-            self.get_logger().warn(
+            self.get_logger().warning(
                 f'no joint matched "{self._match}"; '
                 f'available: {", ".join(msg.name[:6])} ...')
             return

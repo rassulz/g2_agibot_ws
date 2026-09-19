@@ -69,7 +69,7 @@ class JointPositionClient(Node):
             return req.uuid
 
         self._pending[req.uuid] = req
-        self.get_logger().warn(
+        self.get_logger().warning(
             f'SENDING {req.joint_names} -> {req.joint_positions} '
             f'(uuid={req.uuid})')
         self._pub.publish(req)
