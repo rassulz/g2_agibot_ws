@@ -167,3 +167,90 @@ def clamp(model, side, positions):
         if got != want:
             adjusted.append((name, want, got))
     return out, adjusted
+
+
+# --- gestures ---------------------------------------------------------------
+#
+# Rock-paper-scissors, in the same joint order as JOINTS above.
+#
+# 'paper' is AgiBot's own open pose. 'rock' and 'scissors' are built here:
+# the thumb copies AgiBot's grip pose (a curl they validated), and the finger
+# flexors go to ~90% of their documented limit so a fist actually reads as a
+# fist -- their reference grip only curls to about 1.0 rad, which looks more
+# like holding a ball.
+#
+# For scissors the abduction joints spread index and middle apart. O12 has an
+# abad joint on both fingers so it makes a real V; O10 has one only on the
+# index, so the V is shallower. Which way positive abduction points is not
+# stated in the docs -- if the V opens the wrong way, flip the sign of the
+# abad entries. Nothing else about the pose depends on it.
+
+_O10_L_THUMB_CURL = [-0.2, 1.45, -0.75]
+_O10_R_THUMB_CURL = [0.2, -1.45, 0.75]
+_O10_CURL = 1.35          # pip flexion, limit 1.4835
+
+_O12_L_THUMB_CURL = [-0.77, 0.5, -0.4, -0.36]
+_O12_R_THUMB_CURL = [0.77, -0.5, -0.4, -0.36]
+_O12_MCP = 1.30           # limit 1.3526 (index) / 1.3579 (middle)
+_O12_PIP = 1.40           # limit 1.5307 (index) / 1.8151 (middle)
+_O12_RP = 1.40            # ring and pinky mcp, limit 1.5359
+_O12_SPREAD = 0.2618      # index/middle abduction limit
+
+GESTURES = {
+    # O10 order: thumb roll/abad/mcp, index abad/pip, middle pip,
+    #            ring abad/pip, pinky abad/pip
+    ('o10_t2', 'left'): {
+        'paper': [0.0] * 10,
+        'rock': _O10_L_THUMB_CURL + [
+            0.0, _O10_CURL, _O10_CURL, 0.0, _O10_CURL, 0.0, _O10_CURL],
+        'scissors': _O10_L_THUMB_CURL + [
+            0.164, 0.0, 0.0, 0.0, _O10_CURL, 0.0, _O10_CURL],
+    },
+    ('o10_t2', 'right'): {
+        'paper': [0.0] * 10,
+        'rock': _O10_R_THUMB_CURL + [
+            0.0, _O10_CURL, _O10_CURL, 0.0, _O10_CURL, 0.0, _O10_CURL],
+        'scissors': _O10_R_THUMB_CURL + [
+            -0.164, 0.0, 0.0, 0.0, _O10_CURL, 0.0, _O10_CURL],
+    },
+    # O12 order: thumb roll/abad/mcp/pip, index abad/mcp/pip,
+    #            middle abad/mcp/pip, ring mcp, pinky mcp
+    ('o12_t2', 'left'): {
+        'paper': POSES[('o12_t2', 'left')]['open'],
+        'rock': _O12_L_THUMB_CURL + [
+            0.0, _O12_MCP, _O12_PIP, 0.0, _O12_MCP, _O12_PIP,
+            _O12_RP, _O12_RP],
+        'scissors': _O12_L_THUMB_CURL + [
+            _O12_SPREAD, 0.0, 0.0, -_O12_SPREAD, 0.0, 0.0,
+            _O12_RP, _O12_RP],
+    },
+    ('o12_t2', 'right'): {
+        'paper': POSES[('o12_t2', 'right')]['open'],
+        'rock': _O12_R_THUMB_CURL + [
+            0.0, _O12_MCP, _O12_PIP, 0.0, _O12_MCP, _O12_PIP,
+            _O12_RP, _O12_RP],
+        'scissors': _O12_R_THUMB_CURL + [
+            -_O12_SPREAD, 0.0, 0.0, _O12_SPREAD, 0.0, 0.0,
+            _O12_RP, _O12_RP],
+    },
+}
+
+GESTURE_NAMES = ('rock', 'paper', 'scissors')
+
+
+def gesture(model, side, name):
+    """A named gesture, or None if this effector cannot make it.
+
+    Single-DOF grippers can only manage rock (closed) and paper (open);
+    scissors needs fingers, so it returns None rather than something that
+    would look like a shrug.
+    """
+    if model in GRIPPER_RANGE:
+        opened, closed = GRIPPER_RANGE[model]
+        if name == 'paper':
+            return [opened]
+        if name == 'rock':
+            return [closed]
+        return None
+    table = GESTURES.get((model, side))
+    return list(table[name]) if table and name in table else None

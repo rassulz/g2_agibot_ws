@@ -4,7 +4,17 @@ This node MOVES HARDWARE. It refuses to do so unless started with
 ``-p enable:=true``; without that it prints exactly what it would send and
 exits, which is the intended way to check a command before running it.
 
-One knob does the usual job:
+Named gestures are the simplest way in -- rock, paper, scissors:
+
+    ros2 run omni_hand hand_grasp -p side:=right -p gesture:=rock
+    ros2 run omni_hand hand_grasp -p side:=right -p gesture:=rock,paper,scissors
+
+Several names, comma separated, play in order with `hold` seconds between.
+'paper' is AgiBot's own open pose; 'rock' and 'scissors' are built in
+hand_model.py from their validated thumb curl plus finger flexion at ~90% of
+the documented limits. A 1-DOF gripper can do rock and paper but not scissors.
+
+Otherwise one knob covers grasping:
 
     grip = 0.0   fully open
     grip = 1.0   full grasp
@@ -49,6 +59,8 @@ class HandGrasp(Node):
     def __init__(self):
         super().__init__('hand_grasp')
         self.declare_parameter('side', 'right')       # 'left' or 'right'
+        self.declare_parameter('gesture', '')         # rock/paper/scissors
+        self.declare_parameter('hold', 2.0)           # seconds per gesture
         self.declare_parameter('grip', 0.0)           # 0 = open, 1 = grasp
         # Declared by type: an empty default cannot be type-inferred, and
         # leaving it uninitialised is how "not given" is expressed.
@@ -164,8 +176,38 @@ class HandGrasp(Node):
 
     # --- the command -----------------------------------------------------
 
-    def target(self, model, side):
-        """The requested joint positions, before clamping."""
+    def targets(self, model, side):
+        """The requested poses as [(label, positions)], before clamping.
+
+        Three ways to ask, most specific first: a named gesture (or several,
+        comma separated, played in order), explicit positions, or the `grip`
+        slider.
+        """
+        log = self.get_logger()
+
+        names = [
+            n.strip().lower()
+            for n in str(self.get_parameter('gesture').value or '').split(',')
+            if n.strip()]
+        if not names:
+            return self._single(model, side)
+
+        out = []
+        for name in names:
+            if name not in hand_model.GESTURE_NAMES:
+                log.error(
+                    f'unknown gesture {name!r}; '
+                    f'known: {", ".join(hand_model.GESTURE_NAMES)}')
+                return None
+            pose = hand_model.gesture(model, side, name)
+            if pose is None:
+                log.error(
+                    f'{model} cannot make {name!r} -- it has too few joints')
+                return None
+            out.append((name, pose))
+        return out
+
+    def _single(self, model, side):
         log = self.get_logger()
         # Uninitialised type-declared parameters read back as None on some
         # distros and raise on others; both mean "not given".
@@ -180,7 +222,7 @@ class HandGrasp(Node):
                 log.error(
                     f'{model} takes {expected} positions, got {len(custom)}')
                 return None
-            return custom
+            return [('positions', custom)]
 
         grip = float(self.get_parameter('grip').value)
         if not 0.0 <= grip <= 1.0:
@@ -194,7 +236,8 @@ class HandGrasp(Node):
                 f'no reference poses for {model}/{side}; '
                 'pass positions explicitly')
             return None
-        return [o + (c - o) * grip for o, c in zip(opened, closed)]
+        return [('grip=%.2f' % grip,
+                 [o + (c - o) * grip for o, c in zip(opened, closed)])]
 
     def send(self, model, side, positions):
         states = self._gdk.JointStates()
@@ -220,26 +263,46 @@ class HandGrasp(Node):
         if model is None:
             return
 
-        want = self.target(model, side)
-        if want is None:
+        wanted = self.targets(model, side)
+        if wanted is None:
             return
 
-        goal, adjusted = hand_model.clamp(model, side, want)
-        names = hand_model.joint_names(model, side) or [model]
+        joints = hand_model.joint_names(model, side) or [model]
+        enabled = bool(self.get_parameter('enable').value)
+        hold = float(self.get_parameter('hold').value)
 
-        log.info(f'{side} {model} ({hand_model.MODELS[model]} DOF)')
-        for name, value in zip(names, goal):
-            log.info(f'  {name:<32} -> {value:7.4f}')
-        for name, requested, applied in adjusted:
-            log.warning(
-                f'clamped {name}: {requested:.4f} -> {applied:.4f} (limit)')
+        plan = []
+        for label, want in wanted:
+            goal, adjusted = hand_model.clamp(model, side, want)
+            plan.append((label, goal))
 
-        if not self.get_parameter('enable').value:
+            log.info(f'{label}: {side} {model} '
+                     f'({hand_model.MODELS[model]} DOF)')
+            for name, value in zip(joints, goal):
+                log.info(f'  {name:<32} -> {value:7.4f}')
+            for name, requested, applied in adjusted:
+                log.warning(
+                    f'clamped {name}: {requested:.4f} -> {applied:.4f} '
+                    '(limit)')
+
+        if not enabled:
             log.warning(
-                'DRY RUN -- nothing sent. Re-run with -p enable:=true to move '
-                'the hand.')
+                'DRY RUN -- nothing sent. Re-run with -p enable:=true to '
+                'move the hand.')
             return
 
+        for index, (label, goal) in enumerate(plan):
+            log.info(f'-> {label}')
+            if not self._goto(model, side, goal):
+                return
+            if index < len(plan) - 1:
+                time.sleep(hold)
+
+        log.info('done')
+
+    def _goto(self, model, side, goal):
+        """Ramp from the measured position to `goal`. False if it failed."""
+        log = self.get_logger()
         start = self.current_positions(side, len(goal))
         steps = max(1, int(self.get_parameter('steps').value))
         delay = float(self.get_parameter('step_delay').value)
@@ -253,16 +316,14 @@ class HandGrasp(Node):
         try:
             for step in range(1, steps + 1):
                 blend = step / steps
-                waypoint = [
-                    a + (b - a) * blend for a, b in zip(start, goal)]
+                waypoint = [a + (b - a) * blend for a, b in zip(start, goal)]
                 self.send(model, side, waypoint)
                 if step < steps:
                     time.sleep(delay)
         except Exception as exc:
             log.error(f'move_ee_pos() failed: {exc}')
-            return
-
-        log.info('sent')
+            return False
+        return True
 
 
 def main(args=None):
