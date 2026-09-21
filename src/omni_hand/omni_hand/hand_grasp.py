@@ -6,8 +6,8 @@ exits, which is the intended way to check a command before running it.
 
 Named gestures are the simplest way in -- rock, paper, scissors:
 
-    ros2 run omni_hand hand_grasp -p side:=right -p gesture:=rock
-    ros2 run omni_hand hand_grasp -p side:=right -p gesture:=rock,paper,scissors
+    ros2 run omni_hand hand_grasp -p side:=left -p gesture:=rock
+    ros2 run omni_hand hand_grasp -p side:=left -p gesture:=rock,paper,scissors
 
 Several names, comma separated, play in order with `hold` seconds between.
 
@@ -35,10 +35,10 @@ Uses move_ee_pos(), which AgiBot documents as incompatible with the servo
 interface -- do not run this alongside a servo controller.
 
     # look first (no motion, no --enable needed)
-    ros2 run omni_hand hand_grasp -p side:=right -p grip:=1.0
+    ros2 run omni_hand hand_grasp -p side:=left -p grip:=1.0
 
     # then actually move
-    ros2 run omni_hand hand_grasp -p side:=right -p grip:=1.0 -p enable:=true
+    ros2 run omni_hand hand_grasp -p side:=left -p grip:=1.0 -p enable:=true
 """
 
 import time
@@ -60,7 +60,7 @@ class HandGrasp(Node):
 
     def __init__(self):
         super().__init__('hand_grasp')
-        self.declare_parameter('side', 'right')       # 'left' or 'right'
+        self.declare_parameter('side', 'left')        # 'left' or 'right'
         self.declare_parameter('gesture', '')         # rock/paper/scissors
         self.declare_parameter('hold', 2.0)           # seconds per gesture
         self.declare_parameter('grip', 0.0)           # 0 = open, 1 = grasp
