@@ -10,9 +10,11 @@ Named gestures are the simplest way in -- rock, paper, scissors:
     ros2 run omni_hand hand_grasp -p side:=right -p gesture:=rock,paper,scissors
 
 Several names, comma separated, play in order with `hold` seconds between.
-'paper' is AgiBot's own open pose; 'rock' and 'scissors' are built in
-hand_model.py from their validated thumb curl plus finger flexion at ~90% of
-the documented limits. A 1-DOF gripper can do rock and paper but not scissors.
+
+The poses come from AgiBot's own SDK solver, not from guesswork -- see
+hand_model.py. O10 also answers to the other fifteen names it ships with
+('ok', 'like', 'num3', 'clasping', ...); pass one to see the full list. A
+1-DOF gripper manages rock and paper but not scissors.
 
 Otherwise one knob covers grasping:
 
@@ -192,17 +194,14 @@ class HandGrasp(Node):
         if not names:
             return self._single(model, side)
 
+        known = hand_model.gesture_names(model, side)
         out = []
         for name in names:
-            if name not in hand_model.GESTURE_NAMES:
-                log.error(
-                    f'unknown gesture {name!r}; '
-                    f'known: {", ".join(hand_model.GESTURE_NAMES)}')
-                return None
             pose = hand_model.gesture(model, side, name)
             if pose is None:
                 log.error(
-                    f'{model} cannot make {name!r} -- it has too few joints')
+                    f'{model} cannot make {name!r}. Known: '
+                    f'{", ".join(known)}')
                 return None
             out.append((name, pose))
         return out
