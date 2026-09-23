@@ -30,6 +30,7 @@ setup(
             'hand_identify = omni_hand.hand_identify:main',
             'hand_grasp = omni_hand.hand_grasp:main',
             'usb_hand = omni_hand.usb_hand:main',
+            'hand_cmd = omni_hand.hand_cmd:main',
         ],
     },
 )

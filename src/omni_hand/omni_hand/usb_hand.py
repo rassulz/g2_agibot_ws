@@ -30,13 +30,11 @@ One-time setup on the robot (nothing is installed system-wide):
         omnihand-1.1.8-cp312-cp312-linux_aarch64.whl ~/omnihand_pkg
     sudo usermod -aG dialout agi          # serial port access; log in again
 
-Run, from the workspace on the robot:
+Run on the robot, from the workspace (the scripts set up ROS 2 and the SDK
+path, the same way for both, so the two sides always see each other):
 
-    source /opt/ros/kilted/setup.bash
-    export PYTHONPATH=~/omnihand_pkg:$PYTHONPATH
-    python3 src/omni_hand/omni_hand/usb_hand.py --ros-args -p enable:=true
-
-    ros2 topic pub --once /omni_hand/gesture std_msgs/msg/String "data: rock"
+    src/omni_hand/scripts/hand_start.sh            # terminal 1: the driver
+    src/omni_hand/scripts/hand.sh rock             # terminal 2: gestures
 
 USB direct control is O10-only (SDK QUICK_START), so the model is fixed.
 """
@@ -45,6 +43,7 @@ import os
 import time
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
@@ -168,7 +167,11 @@ class UsbHand(Node):
         self._state_pub.publish(msg)
 
     def _status(self, text, error=False):
-        (self.get_logger().error if error else self.get_logger().info)(text)
+        # Separate call sites: rclpy refuses to log one line at two levels.
+        if error:
+            self.get_logger().error(text)
+        else:
+            self.get_logger().info(text)
         self._status_pub.publish(String(data=text))
 
     # --- gestures --------------------------------------------------------
@@ -248,8 +251,8 @@ def main(args=None):
     try:
         if node.connect():
             rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass                  # Ctrl+C or SIGTERM: a normal way to stop
     finally:
         node.destroy_node()
         rclpy.try_shutdown()
