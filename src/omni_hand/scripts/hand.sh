@@ -2,7 +2,7 @@
 # Send gestures to a running usb_hand and print each answer.
 #
 #   hand.sh rock
-#   hand.sh rock paper scissors       3 s pause between gestures
+#   hand.sh rock paper scissors       1 s pause between gestures
 #   hand.sh --pause 5 rock paper      a different pause
 #   hand.sh neutral             hand at rest
 #   hand.sh ok like num3        any O10 factory gesture

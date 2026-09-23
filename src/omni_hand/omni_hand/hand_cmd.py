@@ -5,7 +5,7 @@
     python3 src/omni_hand/omni_hand/hand_cmd.py --pause 5 rock paper
 
 Several gestures are played in order, holding each one for --pause seconds
-(default 3) before the next.
+(default 1) before the next.
 
 Waits until usb_hand is actually subscribed before publishing, so the
 command is not lost to discovery latency the way a bare
@@ -23,7 +23,7 @@ from std_msgs.msg import String
 
 CONNECT_TIMEOUT = 5.0     # seconds to find usb_hand
 GESTURE_TIMEOUT = 20.0    # two ramped phases take ~4 s at the slowest
-DEFAULT_PAUSE = 3.0       # seconds to hold a gesture before the next
+DEFAULT_PAUSE = 1.0       # seconds to hold a gesture before the next
 
 
 def main(args=None):
