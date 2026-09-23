@@ -63,6 +63,12 @@ DEFAULT_PORT = ('/dev/serial/by-id/'
 FAULT_FLAGS = ('stalled', 'overheat', 'over_current',
                'motor_except', 'commu_except')
 
+# A phase counts as reached within this, measured on the hand. The tested
+# poses land within 0.02 rad, so this leaves margin without letting the next
+# phase start while the thumb is still in the way.
+ARRIVE_TOL = 0.05       # rad
+ARRIVE_TIMEOUT = 2.0    # s
+
 
 class UsbHand(Node):
 
@@ -70,6 +76,8 @@ class UsbHand(Node):
         super().__init__('usb_hand')
         self.declare_parameter('port', DEFAULT_PORT)
         self.declare_parameter('side', 'left')        # 'left' or 'right'
+        # Speed: each phase takes about steps * step_delay, plus the time
+        # the hand needs to arrive. steps:=1 jumps at the motors' own speed.
         self.declare_parameter('steps', 10)           # ramp steps per phase
         self.declare_parameter('step_delay', 0.2)     # seconds per step
         self.declare_parameter('state_rate', 2.0)     # Hz, 0 = off
@@ -166,6 +174,21 @@ class UsbHand(Node):
         msg.position = [float(a) for a in self._angles()]
         self._state_pub.publish(msg)
 
+    def _wait_arrival(self, target):
+        """Poll until within ARRIVE_TOL of target, or ARRIVE_TIMEOUT.
+
+        Returns the last max joint error, or None if the hand could not be
+        read.
+        """
+        deadline = time.monotonic() + ARRIVE_TIMEOUT
+        while True:
+            if not self._refresh():
+                return None
+            error = max(abs(a - b) for a, b in zip(self._angles(), target))
+            if error < ARRIVE_TOL or time.monotonic() > deadline:
+                return error
+            time.sleep(0.02)
+
     def _status(self, text, error=False):
         # Separate call sites: rclpy refuses to log one line at two levels.
         if error:
@@ -220,7 +243,11 @@ class UsbHand(Node):
                     [a + (b - a) * k / steps for a, b in zip(pose, target)])
                 time.sleep(delay)
             pose = target
-            if not self._refresh():
+            # Sending the last waypoint is not arriving at it. Wait, so that
+            # a fast ramp cannot start the fingers while the thumb is still
+            # moving out of their way.
+            error = self._wait_arrival(target)
+            if error is None:
                 self._status(f'stopped {name} after {label}: '
                              'could not read the hand', True)
                 return
@@ -229,19 +256,23 @@ class UsbHand(Node):
                 self._status(f'stopped {name} after {label}: '
                              f'joint faults {faults}', True)
                 return
+            if error >= ARRIVE_TOL:
+                self._status(f'stopped {name} after {label}: did not reach '
+                             f'it in {ARRIVE_TIMEOUT:.0f} s '
+                             f'(error {error:.3f} rad)', True)
+                return
 
         key = hand_model.sdk_gesture(MODEL, name)
         if key is not None:
             self._hand.set_hand_gesture(
                 getattr(self._gestures, f'OMNIHAND_2025_GESTURE_{key.upper()}'))
-            time.sleep(delay)
-        self._refresh()
-        error = max(abs(a - b) for a, b in zip(self._angles(), goal))
+        error = self._wait_arrival(goal)
         faults = self._faults()
         if faults:
             self._status(f'done {name} with joint faults {faults}', True)
         else:
-            self._status(f'done {name} (max error {error:.3f} rad)')
+            self._status(f'done {name} (max error {error:.3f} rad)'
+                         if error is not None else f'done {name}')
         self._publish_state()
 
 
