@@ -340,13 +340,33 @@ RPS = {
 
 GESTURE_NAMES = ('rock', 'paper', 'scissors')
 
+# Poses of our own, for what the SDK does not ship. Same joint order.
+#
+# neutral: a hand at rest. None of the 18 factory poses is one -- all_zero
+# is a flat hand, the same as paper, and clasping is half of a two-hand
+# pose with the fingers splayed. So: the fingers curled a little, in a
+# cascade from index to pinky (0.4 -> 0.7 rad, 23-40 deg) the way a
+# relaxed hand hangs, no spread, and the thumb loosely beside the index
+# rather than across the palm. It stays well clear of the game poses --
+# at least 0.69 rad of finger flexion from paper, 1.08 from rock and 1.15
+# from scissors -- so nobody reads it as a move.
+CUSTOM_GESTURES = {
+    ('o10_t2', 'left'): {
+        'neutral': [-0.3, 0.35, -0.2, 0.0, 0.4, 0.5, 0.0, 0.6, 0.0, 0.7],
+    },
+    ('o10_t2', 'right'): {
+        'neutral': [0.3, -0.35, 0.2, 0.0, 0.4, 0.5, 0.0, 0.6, 0.0, 0.7],
+    },
+}
+
 
 def gesture_names(model, side):
     """Everything `gesture()` accepts for this effector."""
     if model in GRIPPER_RANGE:
         return ['rock', 'paper']
     return sorted(
-        set(GESTURE_NAMES) | set(SDK_GESTURES.get((model, side), {})))
+        set(GESTURE_NAMES) | set(SDK_GESTURES.get((model, side), {}))
+        | set(CUSTOM_GESTURES.get((model, side), {})))
 
 
 def gesture(model, side, name):
@@ -368,6 +388,9 @@ def gesture(model, side, name):
             return [closed]
         return None
 
+    custom = CUSTOM_GESTURES.get((model, side), {})
+    if name in custom:
+        return list(custom[name])
     table = SDK_GESTURES.get((model, side))
     if table is None:
         return None

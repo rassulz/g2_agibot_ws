@@ -5,7 +5,8 @@ GDK and to the robot's ROS 2 bridge. Its USB-C port still works: plugged into
 the robot it shows up as a serial port, and the AgiLink OmniHand SDK talks to
 it directly. This node is the ROS 2 side of that link.
 
-    /omni_hand/gesture      std_msgs/String       in   rock | paper | scissors,
+    /omni_hand/gesture      std_msgs/String       in   rock | paper | scissors
+                                                       | neutral (hand at rest),
                                                        or any O10 SDK gesture
                                                        (ok, like, num3, ...)
     /omni_hand/joint_state  sensor_msgs/JointState out  measured joint angles
@@ -21,6 +22,7 @@ Every move is checked and paced the same way it was tested on the hand:
   * split the move so the thumb and fingers do not collide
     (hand_model.o10_phases), and ramp each phase from the measured pose
   * finish with the SDK's own set_hand_gesture() for the exact factory pose
+    (neutral is our own pose, so it ends on the ramp instead)
 
 One-time setup on the robot (nothing is installed system-wide):
 
