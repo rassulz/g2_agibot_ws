@@ -373,3 +373,44 @@ def gesture(model, side, name):
         return None
     key = RPS.get(model, {}).get(name, name)
     return list(table[key]) if key in table else None
+
+
+# --- move planning (O10) ----------------------------------------------------
+#
+# The thumb folds over the fingers, so moving everything at once can drive a
+# finger into the thumb. Found on the hand itself: going from rock to
+# scissors, index and middle have to come out from under the thumb. The rule
+# that covers every rock/paper/scissors transition:
+#
+#   fingers closing -> fingers first, then the thumb wraps over them
+#   fingers opening -> the thumb moves out of the way first, then the fingers
+#
+# Indices are positions in JOINTS[('o10_t2', side)], which is also the order
+# the AgiLink SDK uses for get/set_all_active_joint_angles().
+
+O10_THUMB = (0, 1, 2)                 # roll, abad, mcp
+O10_FINGERS = (3, 4, 5, 6, 7, 8, 9)   # abad and pip joints of the four fingers
+O10_FLEX = (4, 5, 7, 9)               # the pip joints: how far the hand is closed
+
+
+def o10_phases(start, goal):
+    """Split an O10 move into [(label, pose), ...] reached one after another.
+
+    Each pose is a full 10-joint target; the last one is always `goal`.
+    """
+    closing = sum(goal[i] - start[i] for i in O10_FLEX) > 0
+    thumb_done = [goal[i] if i in O10_THUMB else start[i]
+                  for i in range(len(goal))]
+    fingers_done = [goal[i] if i in O10_FINGERS else start[i]
+                    for i in range(len(goal))]
+    if closing:
+        return [('fingers', fingers_done), ('thumb', list(goal))]
+    return [('thumb', thumb_done), ('fingers', list(goal))]
+
+
+def sdk_gesture(model, name):
+    """The AgiLink SDK gesture key behind `name` ('rock' -> 'fist2'), or None."""
+    name = name.strip().lower()
+    key = RPS.get(model, {}).get(name, name)
+    table = SDK_GESTURES.get((model, 'left'), {})
+    return key if key in table else None
