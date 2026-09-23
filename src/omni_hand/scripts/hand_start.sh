@@ -4,9 +4,10 @@
 #   hand_start.sh             drive the hand
 #   hand_start.sh --dry-run   answer gestures without moving
 #
-# Anything after that goes to the node as ROS parameters, e.g. speed:
-#   hand_start.sh -p steps:=5 -p step_delay:=0.05     ~0.25 s ramp per phase
-#   hand_start.sh -p steps:=1                         the motors' own speed
+# Moves at the motors' own speed (steps:=1). Anything after that goes to the
+# node as ROS parameters and wins over it, e.g. to slow down:
+#   hand_start.sh -p steps:=5 -p step_delay:=0.1      ~0.5 s ramp per phase
+#   hand_start.sh -p steps:=10                        ~2 s per phase
 #
 # Runs outside hal: the robot's e-stop does not stop it. Ctrl+C stops it.
 
@@ -25,4 +26,4 @@ if [ "$1" = "--dry-run" ]; then
 fi
 
 exec python3 "$WS/src/omni_hand/omni_hand/usb_hand.py" \
-    --ros-args -p enable:=$ENABLE "$@"
+    --ros-args -p enable:=$ENABLE -p steps:=1 "$@"
